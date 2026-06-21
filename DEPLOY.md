@@ -21,27 +21,57 @@ Due strade, sotto, entrambe con login funzionante.
 
 ## Configurare Supabase come database
 
-1. Crea un progetto su **supabase.com** (scegli una password DB e salvala).
-2. **Project Settings → Database → Connection string → URI**. Trovi due URL:
-   - **Connection pooling** (porta `6543`, host `...pooler.supabase.com`) →
-     usala come `DATABASE_URL` per l'app su hosting **serverless**
-     (Vercel/Netlify). Aggiungi `?pgbouncer=true&connection_limit=1`.
-   - **Direct connection** (porta `5432`) → usala solo per applicare le
-     migration (`prisma migrate deploy`), perché PgBouncer non supporta i
-     comandi DDL del migrate.
-3. Esempio:
-   ```bash
-   # .env locale per lanciare le migration una tantum (direct, 5432):
-   DATABASE_URL="postgresql://postgres:PASSWORD@db.<ref>.supabase.co:5432/postgres"
-   npx prisma migrate deploy
-   npm run db:seed        # opzionale: utente demo
+> Nota: su Supabase **non c'è un passo separato "crea database"**. Creando il
+> progetto ottieni già un Postgres con un database chiamato `postgres`; le
+> tabelle dell'app le crea Prisma con `prisma migrate deploy`.
 
-   # Valore da mettere nelle env var dell'hosting (pooler, 6543):
-   # DATABASE_URL="postgresql://postgres.<ref>:PASSWORD@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
-   ```
-4. (Opzionale) La spec cita Supabase Storage e RLS: lo storage non è richiesto
-   per far girare l'app; la RLS la fa già a livello applicativo lo scoping per
-   `userId` di sessione su ogni query.
+### 1. Crea il progetto (= crea il database)
+1. supabase.com → accedi → **New project**.
+2. Compila: **Name** (es. `dayflow`), **Database Password** (scegline una forte
+   e **salvala**: serve nella connection string), **Region** (la più vicina).
+3. **Create new project** e attendi ~2 minuti che il database sia pronto.
+
+### 2. Trova la connection string
+Nella dashboard del progetto, in alto, premi il pulsante verde **Connect**.
+Si apre "Connect to your project" con la sezione **Connection string** e tre
+schede:
+- **Direct connection** — host `db.<ref>.supabase.co`, porta `5432` (solo IPv6).
+- **Transaction pooler** — host `aws-0-<region>.pooler.supabase.com`, porta
+  `6543`, utente `postgres.<ref>`.
+- **Session pooler** — stesso host pooler, porta `5432` (IPv4).
+
+C'è anche una scheda **ORMs → Prisma** che mostra già pronti `DATABASE_URL` e
+`DIRECT_URL`. In ogni stringa sostituisci `[YOUR-PASSWORD]` con la password del
+punto 1. (Se l'hai persa: *Settings → Database → Database password → Reset*.)
+
+> Vecchia UI alternativa: ingranaggio **Settings → Database → Connection string
+> / Connection pooling**.
+
+### 3. Quale URL usare
+- **App in produzione** (Vercel/Netlify, serverless) → **Transaction pooler**
+  (`6543`). Aggiungi in coda `?pgbouncer=true&connection_limit=1`.
+- **Migration** (`prisma migrate deploy`) → **Direct** (`5432`). Se la tua rete
+  è solo IPv4 (errore "network unreachable"), usa il **Session pooler** (`5432`)
+  per le migration.
+
+### 4. Applica lo schema e (opzionale) il seed
+Da locale, una sola volta, con l'URL direct/session (5432):
+```bash
+DATABASE_URL="postgresql://postgres:PASSWORD@db.<ref>.supabase.co:5432/postgres" \
+  npx prisma migrate deploy
+DATABASE_URL="postgresql://postgres:PASSWORD@db.<ref>.supabase.co:5432/postgres" \
+  npm run db:seed      # facoltativo: utente demo@dayflow.app / dayflow
+```
+
+### 5. Valore per l'hosting
+Nelle env var di Vercel/Netlify usa il **pooler** (6543):
+```
+DATABASE_URL=postgresql://postgres.<ref>:PASSWORD@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+```
+
+> RLS/Storage citati nella spec non servono per far girare l'app: lo scoping per
+> `userId` di sessione è già applicato su ogni query; lo Storage servirebbe solo
+> per l'audio opzionale (non implementato).
 
 ---
 
