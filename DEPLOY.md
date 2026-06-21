@@ -15,55 +15,69 @@ Due strade, sotto, entrambe con login funzionante.
 
 ---
 
-## Opzione A — GitHub → Vercel + Postgres (consigliata)
+> Lo schema è **già su PostgreSQL** e le migration sono versionate in
+> `prisma/migrations/`. Per andare in produzione basta puntare `DATABASE_URL`
+> al DB gestito e applicare le migration — nessuna conversione necessaria.
+
+## Configurare Supabase come database
+
+1. Crea un progetto su **supabase.com** (scegli una password DB e salvala).
+2. **Project Settings → Database → Connection string → URI**. Trovi due URL:
+   - **Connection pooling** (porta `6543`, host `...pooler.supabase.com`) →
+     usala come `DATABASE_URL` per l'app su hosting **serverless**
+     (Vercel/Netlify). Aggiungi `?pgbouncer=true&connection_limit=1`.
+   - **Direct connection** (porta `5432`) → usala solo per applicare le
+     migration (`prisma migrate deploy`), perché PgBouncer non supporta i
+     comandi DDL del migrate.
+3. Esempio:
+   ```bash
+   # .env locale per lanciare le migration una tantum (direct, 5432):
+   DATABASE_URL="postgresql://postgres:PASSWORD@db.<ref>.supabase.co:5432/postgres"
+   npx prisma migrate deploy
+   npm run db:seed        # opzionale: utente demo
+
+   # Valore da mettere nelle env var dell'hosting (pooler, 6543):
+   # DATABASE_URL="postgresql://postgres.<ref>:PASSWORD@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+   ```
+4. (Opzionale) La spec cita Supabase Storage e RLS: lo storage non è richiesto
+   per far girare l'app; la RLS la fa già a livello applicativo lo scoping per
+   `userId` di sessione su ogni query.
+
+---
+
+## Opzione A — GitHub → Vercel + Supabase (consigliata)
 
 È lo stack della spec: codice su GitHub, deploy automatico su Vercel, database
-Postgres gestito (Supabase / Neon / Vercel Postgres).
+Postgres gestito su Supabase.
 
-### 1. Passa lo schema a Postgres
-In `prisma/schema.prisma`:
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-```
-Poi crea la prima migrazione (in locale, con un Postgres raggiungibile):
-```bash
-npx prisma migrate dev --name init
-git add prisma/migrations && git commit -m "Add Postgres migrations" && git push
-```
+### 1. Crea il database
+Segui "Configurare Supabase" qui sopra e tieni a portata le due URL (pooler per
+l'app, direct per le migration).
 
-### 2. Crea il database
-Su **Supabase** (o Neon): crea un progetto, copia la **connection string**
-(`postgresql://...`). Su Supabase usa la URL "Connection pooling" per le API
-serverless.
-
-### 3. Importa il repo su Vercel
+### 2. Importa il repo su Vercel
 - vercel.com → *Add New Project* → importa `matteosubscriptions-bot/dayflow`.
 - Framework: Next.js (auto). Build command predefinito (`npm run build`, che
   esegue già `prisma generate`).
 
-### 4. Variabili d'ambiente su Vercel
+### 3. Variabili d'ambiente su Vercel
 In *Project → Settings → Environment Variables*:
 
 | Nome | Valore |
 |------|--------|
-| `DATABASE_URL` | la connection string Postgres |
+| `DATABASE_URL` | URL **pooler** Supabase (porta 6543, `?pgbouncer=true&connection_limit=1`) |
 | `NEXTAUTH_SECRET` | genera con `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | `https://<tuo-progetto>.vercel.app` |
 | `ANTHROPIC_API_KEY` | la tua chiave Claude (opzionale: senza, fallback locali) |
 
-### 5. Applica le migrazioni al DB di produzione
-Una volta che il DB esiste, da locale (con `DATABASE_URL` puntato alla prod) o
-da una Vercel build step:
+### 4. Applica le migrazioni al DB di produzione
+Una sola volta, da locale con `DATABASE_URL` puntato alla **direct connection**
+Supabase (porta 5432):
 ```bash
 npx prisma migrate deploy
-# (facoltativo) utente demo:
-npm run db:seed
+npm run db:seed   # facoltativo: utente demo
 ```
 
-### 6. Deploy
+### 5. Deploy
 Ogni push su GitHub fa partire un deploy. L'URL pubblico è pronto.
 
 ---

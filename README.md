@@ -8,7 +8,7 @@ riflessivi. Implementazione full-stack secondo le specifiche v1.0.
 
 - **Next.js 14** (App Router) + React + TypeScript
 - **Tailwind CSS** — design system "calma intenzionale"
-- **Prisma** — ORM (SQLite in dev, PostgreSQL/Supabase in produzione)
+- **Prisma** — ORM su **PostgreSQL** (dev: Postgres locale avviato dall'hook; prod: Supabase/Neon/Railway)
 - **NextAuth.js** — auth email/password (JWT, cookie httpOnly)
 - **Zustand** — state UI (quick-capture, stato online)
 - **Recharts** — grafici review/report
@@ -19,12 +19,19 @@ riflessivi. Implementazione full-stack secondo le specifiche v1.0.
 ## Avvio rapido
 
 ```bash
-npm install                # installa dipendenze + prisma generate
-cp .env.example .env       # già presente un .env di dev con SQLite
-npm run db:push            # crea il database SQLite (dev.db)
-npm run db:seed            # utente demo + dati di esempio
-npm run dev                # http://localhost:3000
+npm install                          # dipendenze + prisma generate
+cp .env.example .env                 # DATABASE_URL già punta a un Postgres locale
+# Avvia un Postgres locale e crea ruolo/db "dayflow" (oppure usa Supabase):
+#   sudo pg_ctlcluster 16 main start
+#   sudo -u postgres psql -c "CREATE ROLE dayflow LOGIN PASSWORD 'dayflow' CREATEDB;"
+#   sudo -u postgres createdb -O dayflow dayflow
+npx prisma migrate deploy            # applica le migration
+npm run db:seed                      # utente demo + dati di esempio
+npm run dev                          # http://localhost:3000
 ```
+
+> Nelle sessioni Claude Code sul web, il SessionStart hook fa tutto questo da
+> solo (avvia Postgres, crea il db, applica le migration).
 
 Login demo: **demo@dayflow.app** / **dayflow** (oppure registra un nuovo account
 dalla pagina di login).
@@ -66,8 +73,9 @@ sessione (mai dall'input), rate limit 10 chiamate AI/minuto per utente.
 
 ## Note di implementazione
 
-- DB di sviluppo: **SQLite** per partire senza servizi esterni. Lo schema è
-  portabile su Postgres (tutti gli "enum" sono `String`, come da spec).
+- DB: **PostgreSQL** ovunque. In dev l'hook avvia un Postgres locale; in prod
+  punta `DATABASE_URL` a Supabase/Neon. Migration versionate in
+  `prisma/migrations/`.
 - Service Worker (`public/sw.js`) registrato solo in produzione per l'app-shell
   offline; un banner segnala lo stato offline.
 - Riduzione animazioni rispettata via `prefers-reduced-motion`.

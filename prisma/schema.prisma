@@ -1,15 +1,15 @@
 // DayFlow — Prisma schema
 //
-// Dev uses SQLite for zero-setup local runs. For production, switch
-// `provider` to "postgresql" (the spec target: Supabase/Railway) — every
-// model uses String for "enum" fields, so the schema is portable as-is.
+// PostgreSQL (spec target: Supabase/Railway/Neon). Dev sessions use a local
+// Postgres started by the SessionStart hook; production points DATABASE_URL at
+// a managed instance. Every "enum" field is a String, keeping the schema simple.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
