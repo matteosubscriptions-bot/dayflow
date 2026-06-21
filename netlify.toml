@@ -1,0 +1,15 @@
+# Netlify config per DayFlow (Next.js 14 App Router)
+# Netlify rileva ed esegue Next.js (SSR + API routes) tramite il suo
+# Next.js Runtime — non serve installare plugin manualmente.
+
+[build]
+  command = "npm run build"   # esegue `prisma generate` + `next build`
+  publish = ".next"
+
+[build.environment]
+  # Prisma scarica il binario corretto per l'ambiente di build Netlify.
+  NODE_VERSION = "20"
+
+# Le variabili d'ambiente (DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL,
+# ANTHROPIC_API_KEY) vanno impostate in Site settings → Environment variables,
+# non qui (non committare i secret).
