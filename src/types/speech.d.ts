@@ -1,52 +1,49 @@
-// Minimal Web Speech API typings (not in the default TS lib).
+// Tipi minimi per la Web Speech API (non inclusi nel dom lib standard).
 
-declare global {
-  interface SpeechRecognitionAlternative {
-    transcript: string;
-    confidence: number;
-  }
-
-  interface SpeechRecognitionResult {
-    readonly length: number;
-    item(index: number): SpeechRecognitionAlternative;
-    [index: number]: SpeechRecognitionAlternative;
-    isFinal: boolean;
-  }
-
-  interface SpeechRecognitionResultList {
-    readonly length: number;
-    item(index: number): SpeechRecognitionResult;
-    [index: number]: SpeechRecognitionResult;
-  }
-
-  interface SpeechRecognitionEvent extends Event {
-    readonly resultIndex: number;
-    readonly results: SpeechRecognitionResultList;
-  }
-
-  interface SpeechRecognitionErrorEvent extends Event {
-    readonly error: string;
-    readonly message: string;
-  }
-
-  interface SpeechRecognition extends EventTarget {
-    lang: string;
-    continuous: boolean;
-    interimResults: boolean;
-    maxAlternatives: number;
-    start(): void;
-    stop(): void;
-    abort(): void;
-    onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void) | null;
-    onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void) | null;
-    onend: ((this: SpeechRecognition, ev: Event) => void) | null;
-    onstart: ((this: SpeechRecognition, ev: Event) => void) | null;
-  }
-
-  interface Window {
-    SpeechRecognition?: { new (): SpeechRecognition };
-    webkitSpeechRecognition?: { new (): SpeechRecognition };
-  }
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
 }
 
-export {};
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  length: number;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((e: SpeechRecognitionEvent) => void) | null;
+  onend: ((e: Event) => void) | null;
+  onerror: ((e: SpeechRecognitionErrorEvent) => void) | null;
+  onstart: ((e: Event) => void) | null;
+}
+
+declare var SpeechRecognition: { new (): SpeechRecognition } | undefined;
+declare var webkitSpeechRecognition: { new (): SpeechRecognition } | undefined;
+
+interface Window {
+  SpeechRecognition?: { new (): SpeechRecognition };
+  webkitSpeechRecognition?: { new (): SpeechRecognition };
+}

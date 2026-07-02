@@ -1,81 +1,92 @@
-# DayFlow
+# Officina & Specchio
 
-Journal coach web app per la crescita personale. Check-in giornalieri guidati e
-voice-first, obiettivi a reverse-engineering, analisi pattern via AI, report
-riflessivi. Implementazione full-stack secondo le specifiche v1.0.
+Sistema personale in due superfici (evoluzione di DayFlow, spec v2.0):
+
+- 🛠 **OFFICINA** — il fare: progetti, task, priorità, idee, connessioni
+- 🪞 **SPECCHIO** — l'essere: dialogo, umore/energia, gratitudine, abitudini,
+  obiettivi di vita, profilo evolutivo
+
+Le due superfici vivono nella stessa app e condividono solo gli **obiettivi di
+vita**: Specchio ne è proprietario, Officina li legge (in sola lettura) quando
+prioritizza.
+
+## Principi implementati
+
+- **La cattura non fallisce mai.** Un tasto, si parla (Web Speech API it-IT,
+  trascrizione live) o si scrive. Il grezzo si salva subito; se manca la rete
+  finisce in una coda locale (localStorage) e viene re-inviato al ritorno
+  online. L'elaborazione AI è sempre differibile e il grezzo non si cancella
+  mai.
+- **Router locale.** La classificazione task/idea/specchio e il rilevamento
+  del disagio girano client-side, senza rete. Se il router è in dubbio,
+  decide l'utente ("Dove va?"), mai il sistema in silenzio.
+- **Commutatore normale/disagio (non negoziabile).** Nei dialoghi di
+  Specchio, i segnali di sofferenza acuta bloccano le domande e il cloud:
+  quei contenuti non lasciano il dispositivo; resta un messaggio di ascolto
+  che rimanda a persone vere e professionisti.
+- **AI a chiamata, mai custode dei dati.** Al cloud va solo il testo minimo,
+  anonimo. Senza `ANTHROPIC_API_KEY` tutto funziona con fallback locali.
+- **Sovranità del dato.** Export JSON completo in un click (tab Profilo).
+
+## Scelte di semplificazione (utente singolo, pre-produzione)
+
+Rispetto alla spec: una sola web app con commutatore invece di due app
+native; nessun multi-utente/auth; ricerca testuale (ILIKE) invece di
+embeddings; Postgres come "server personale" invece di SQLite on-device;
+niente Google Calendar né sync multi-dispositivo (fase 2+). Il modello dati
+(§6) è però completo: `links` (il grafo), `tags`, `captures`, `life_goals`,
+`dialogues`, `profile_traits`, `reports`…
 
 ## Stack
 
-- **Next.js 14** (App Router) + React + TypeScript
-- **Tailwind CSS** — design system "calma intenzionale"
-- **Prisma** — ORM su **PostgreSQL** (dev: Postgres locale avviato dall'hook; prod: Supabase/Neon/Railway)
-- **NextAuth.js** — auth email/password (JWT, cookie httpOnly)
-- **Zustand** — state UI (quick-capture, stato online)
-- **Recharts** — grafici review/report
-- **Web Speech API** — input vocale nativo, con fallback a testo
-- **Anthropic Claude** (`claude-sonnet-4-6`) — domande dinamiche, reverse
-  engineering, narrativa report, suggerimenti idee
+- **Next.js 14** (App Router) + React + TypeScript — UI a due temi
+  (Officina chiara, Specchio scura)
+- **Prisma + PostgreSQL** — persistenza (dev: Postgres locale avviato
+  dall'hook; prod: Supabase/Neon/Railway)
+- **Zustand** — stato client con update ottimistici e coda offline
+- **Web Speech API** — cattura vocale nativa con fallback testo
+- **Anthropic Claude** (`claude-sonnet-4-6`) — agenti: Elaboratore,
+  Counselor, Creatività, Pensiero laterale, Systems thinking, Design
+  thinking, narrativa review
 
 ## Avvio rapido
 
 ```bash
-npm install                          # dipendenze + prisma generate
-cp .env.example .env                 # DATABASE_URL già punta a un Postgres locale
-# Avvia un Postgres locale e crea ruolo/db "dayflow" (oppure usa Supabase):
-#   sudo pg_ctlcluster 16 main start
-#   sudo -u postgres psql -c "CREATE ROLE dayflow LOGIN PASSWORD 'dayflow' CREATEDB;"
-#   sudo -u postgres createdb -O dayflow dayflow
-npx prisma migrate deploy            # applica le migration
-npm run db:seed                      # utente demo + dati di esempio
-npm run dev                          # http://localhost:3000
+npm install                # dipendenze + prisma generate
+cp .env.example .env       # DATABASE_URL punta a un Postgres locale
+npx prisma migrate deploy  # applica le migration
+npm run db:seed            # abitudini di default
+npm run dev                # http://localhost:3000
 ```
 
-> Nelle sessioni Claude Code sul web, il SessionStart hook fa tutto questo da
-> solo (avvia Postgres, crea il db, applica le migration).
+> Nelle sessioni Claude Code sul web il SessionStart hook fa tutto da solo
+> (Postgres, db, migration, seed).
 
-Login demo: **demo@dayflow.app** / **dayflow** (oppure registra un nuovo account
-dalla pagina di login).
+### AI opzionale
 
-### AI opzionale in dev
+Senza `ANTHROPIC_API_KEY` l'app resta usabile: elaborazione euristica dei
+grezzi, dialogo con domande locali, review senza narrativa. Con la chiave in
+`.env` si attivano gli agenti veri.
 
-Senza `ANTHROPIC_API_KEY` l'app funziona comunque: ogni feature AI ha un
-fallback locale (domande fisse, template di obiettivi, report senza narrativa).
-Imposta la chiave in `.env` per attivare le funzioni generative.
-
-## Produzione (Postgres/Supabase)
-
-1. In `prisma/schema.prisma` cambia `datasource db { provider = "postgresql" }`.
-2. Imposta `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `ANTHROPIC_API_KEY`.
-3. `npx prisma migrate deploy` e deploy su Vercel.
-
-## Struttura
+## Mappa del codice
 
 ```
-src/
-├── app/
-│   ├── (main)/         # pagine con shell+nav (home, goals, journal, tasks, …)
-│   ├── checkin/[type]/ # flusso check-in distraction-free (morning|midday|evening|quick)
-│   ├── login, onboarding
-│   └── api/            # API routes (checkin, goals, tasks, ai, patterns, reports, …)
-├── components/         # VoiceInput, MoodPicker, CheckInFlow, GoalTree, ReportDashboard, QuickCapture, …
-├── hooks/useVoice.ts   # lifecycle Web Speech API
-├── lib/                # prisma, auth, anonymize, ai/*, patterns, reports, reflections, …
-├── store/              # Zustand
-└── types/
+prisma/schema.prisma        modello dati v2 (grafo links, captures, ecc.)
+src/lib/router.ts           router locale + rilevamento disagio (client-side)
+src/lib/heuristics.ts       rana, Eisenhower, pattern proattivi, similarità
+src/lib/agents.ts           prompt di sistema degli agenti
+src/lib/anthropic.ts        client AI + fallback locali
+src/app/api/*               API (state, captures, elaborate, dialogue, …)
+src/store/useAppStore.ts    stato client + coda offline
+src/components/AppShell.tsx la soglia tra le due superfici
+src/components/officina/*   Oggi · Progetti · Idee · Cerca
+src/components/specchio/*   Dialogo · Diario · Timeline · Obiettivi · Profilo
 ```
 
-## Privacy
+## Produzione
 
-`lib/anonymize.ts` rimuove nomi, luoghi e contatti **prima** di ogni chiamata
-all'API Claude (sostituzioni `[persona]`/`[luogo]`/`[collega]`…). I dati grezzi
-del journal restano solo sul server. Le query filtrano sempre per `userId` di
-sessione (mai dall'input), rate limit 10 chiamate AI/minuto per utente.
-
-## Note di implementazione
-
-- DB: **PostgreSQL** ovunque. In dev l'hook avvia un Postgres locale; in prod
-  punta `DATABASE_URL` a Supabase/Neon. Migration versionate in
-  `prisma/migrations/`.
-- Service Worker (`public/sw.js`) registrato solo in produzione per l'app-shell
-  offline; un banner segnala lo stato offline.
-- Riduzione animazioni rispettata via `prefers-reduced-motion`.
+1. `DATABASE_URL` verso un Postgres gestito, `ANTHROPIC_API_KEY` per l'AI.
+2. `npx prisma migrate deploy && npm run db:seed`.
+3. Deploy su Netlify (config inclusa) o Vercel. L'app è pensata per un solo
+   utente: non esporla pubblicamente senza una protezione davanti (es.
+   password protection di Netlify o Basic Auth del reverse proxy).

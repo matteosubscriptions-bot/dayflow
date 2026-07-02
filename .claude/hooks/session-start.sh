@@ -33,7 +33,8 @@ fi
 # benefits from the cached container state.
 npm install
 
-# Apply committed migrations to the dev database.
+# Apply committed migrations to the dev database and seed defaults.
 npx prisma migrate deploy 2>/dev/null || npx prisma db push --skip-generate
+node prisma/seed.mjs 2>/dev/null || true
 
-echo "DayFlow session ready."
+echo "Officina & Specchio session ready."

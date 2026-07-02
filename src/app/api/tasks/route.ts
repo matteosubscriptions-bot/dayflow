@@ -1,42 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireUserId, isResponse } from "@/lib/apiAuth";
 
-export async function GET() {
-  try {
-    const userId = await requireUserId();
-    const tasks = await prisma.task.findMany({
-      where: { userId, status: { not: "archived" } },
-      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+export async function POST(req: Request) {
+  const b = await req.json();
+  if (!b.title?.trim()) return NextResponse.json({ error: "titolo mancante" }, { status: 400 });
+  const task = await prisma.task.create({
+    data: {
+      title: b.title.trim(),
+      projectId: b.projectId || null,
+      urgency: +b.urgency || 3,
+      importance: +b.importance || 3,
+      supportsGoalId: b.supportsGoalId || null,
+      dueDate: b.dueDate ? new Date(b.dueDate) : null,
+      scheduledDate: b.scheduledDate ? new Date(b.scheduledDate) : null,
+    },
+  });
+  // Il ponte fare→identità, tracciato anche nel grafo.
+  if (task.supportsGoalId) {
+    await prisma.link.create({
+      data: { fromType: "task", fromId: task.id, toType: "life_goal", toId: task.supportsGoalId, relation: "supports_goal" },
     });
-    return NextResponse.json({ tasks });
-  } catch (err) {
-    if (isResponse(err)) return err;
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const userId = await requireUserId();
-    const body = (await req.json()) as {
-      title: string;
-      priority?: "high" | "medium" | "low";
-      goalId?: string;
-      dueDate?: string;
-    };
-    const task = await prisma.task.create({
-      data: {
-        userId,
-        title: body.title,
-        priority: body.priority ?? "medium",
-        goalId: body.goalId,
-        dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
-      },
-    });
-    return NextResponse.json({ task });
-  } catch (err) {
-    if (isResponse(err)) return err;
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
-  }
+  return NextResponse.json(task);
 }

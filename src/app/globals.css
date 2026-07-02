@@ -1,115 +1,36 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Officina & Specchio — base CSS (la soglia: due materiali, vedi ui.tsx). */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Archivo:wght@400;500;600;700&display=swap");
 
-:root {
-  --color-ink: #1a1a2e;
-  --color-canvas: #f7f5f0;
-  --color-mist: #e8e4dc;
-  --color-focus: #4a7c94;
-  --color-achieved: #7b9e6b;
-  --color-attention: #c4855a;
-  --color-low: #8b7ba8;
-
-  --mood-1: #c4855a;
-  --mood-2: #d4a96a;
-  --mood-3: #94a8b4;
-  --mood-4: #7b9e6b;
-  --mood-5: #4a7c94;
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
-
-.dark {
-  --color-ink: #f0eee8;
-  --color-canvas: #1c1c2a;
-  --color-mist: #252535;
+body {
+  margin: 0;
 }
-
-@layer base {
-  html {
-    -webkit-tap-highlight-color: transparent;
-  }
-  body {
-    background-color: var(--color-canvas);
-    color: var(--color-ink);
-    font-family: var(--font-inter), system-ui, sans-serif;
-    font-size: 16px;
-    line-height: 1.5;
-    min-height: 100dvh;
-    -webkit-font-smoothing: antialiased;
-  }
+button {
+  font-family: inherit;
+  cursor: pointer;
 }
-
-@layer components {
-  .font-display {
-    font-family: var(--font-lora), Georgia, serif;
-  }
-
-  .question-title {
-    font-family: var(--font-lora), Georgia, serif;
-    font-size: 22px;
-    line-height: 1.4;
-    color: var(--color-ink);
-  }
-
-  .meta {
-    font-size: 12px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: rgb(26 26 46 / 0.4);
-  }
-  .dark .meta {
-    color: rgb(240 238 232 / 0.4);
-  }
-
-  .card {
-    background-color: var(--color-mist);
-    border-radius: 12px;
-  }
-
-  .btn-primary {
-    background-color: var(--color-focus);
-    color: #fff;
-    border-radius: 12px;
-    padding: 0.875rem 1.5rem;
-    font-weight: 500;
-    transition: opacity 0.2s ease, transform 0.1s ease;
-  }
-  .btn-primary:hover {
-    opacity: 0.92;
-  }
-  .btn-primary:active {
-    transform: scale(0.98);
-  }
-  .btn-primary:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .btn-ghost {
-    color: var(--color-ink);
-    opacity: 0.6;
-    transition: opacity 0.2s ease;
-  }
-  .btn-ghost:hover {
-    opacity: 1;
-  }
-
-  .transcript-interim {
-    font-style: italic;
-    opacity: 0.6;
-  }
-  .transcript-final {
-    font-style: italic;
-    opacity: 1;
-  }
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: 15px;
 }
-
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #8a611c;
+  outline-offset: 2px;
+}
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  * {
+    transition: none !important;
+    animation: none !important;
   }
+}
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }

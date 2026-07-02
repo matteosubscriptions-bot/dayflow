@@ -1,84 +1,132 @@
-// Shared domain types used across client and server.
+// Tipi client-side delle entità (specchiano lo schema Prisma; le date
+// viaggiano come stringhe ISO nel JSON delle API).
 
-export type CheckInType = "morning" | "midday" | "evening" | "weekly" | "monthly";
-export type LiveCheckInType = "morning" | "midday" | "evening";
-
-export type MoodContextLevel = "low" | "normal" | "high";
-
-export interface MoodContext {
-  mood: number; // 1-5
-  energy: number; // 1-10
-}
-
-export interface MoodSelection {
-  emoji: string;
-  label: string;
-  intensity: number; // 1-5
-  energy: number; // 1-10
-}
-
-export type CheckInInputType =
-  | "voice"
-  | "mood_picker"
-  | "task_list"
-  | "habit_checklist"
-  | "text";
-
-export interface CheckInStep {
+export type CaptureT = {
   id: string;
-  questionKey: string;
-  questionText: string;
-  isDynamic: boolean;
-  inputType: CheckInInputType;
-  isSkippable: boolean;
-  moodAdaptation?: {
-    low?: Partial<CheckInStep>;
-    high?: Partial<CheckInStep>;
-  };
-}
+  raw: string;
+  source: string;
+  surface?: string | null;
+  suggested?: string | null;
+  ambiguous: boolean;
+  status: string;
+  domain?: string | null;
+  aiClean?: string | null;
+  processedAt?: string | null;
+  createdAt: string;
+};
 
-export interface CheckInEntryData {
-  questionKey: string;
-  questionText: string;
-  isDynamic: boolean;
-  value: string;
-  skipped?: boolean;
-}
+export type LinkT = {
+  id: string;
+  fromType: string;
+  fromId: string;
+  toType: string;
+  toId: string;
+  relation: string;
+  createdBy: string;
+  createdAt: string;
+};
 
-export interface CheckInData {
-  type: LiveCheckInType;
-  entries: CheckInEntryData[];
-  mood?: MoodSelection;
-  habitLogs?: HabitLog[];
-  status?: "completed" | "minimal" | "quick";
-}
+export type LifeGoalT = {
+  id: string;
+  horizon: string;
+  area?: string | null;
+  title: string;
+  whyDeep?: string | null;
+  alignment?: number | null;
+  isActive: boolean;
+  createdAt: string;
+};
 
-export interface HabitLog {
-  habitId: string;
+export type ProjectT = {
+  id: string;
   name: string;
+  description?: string | null;
+  status: string;
+  lastProgressAt?: string | null;
+  createdAt: string;
+};
+
+export type TaskT = {
+  id: string;
+  projectId?: string | null;
+  title: string;
+  urgency: number;
+  importance: number;
+  dueDate?: string | null;
+  scheduledDate?: string | null;
+  status: string;
+  deferredCount: number;
+  supportsGoalId?: string | null;
+  captureId?: string | null;
+  completedAt?: string | null;
+  createdAt: string;
+};
+
+export type IdeaT = {
+  id: string;
+  title: string;
+  body?: string | null;
+  voiceRaw?: string | null;
+  maturity: string;
+  theme?: string | null;
+  captureId?: string | null;
+  createdAt: string;
+};
+
+export type DialogueTurn = { role: "user" | "assistant"; content: string; local?: boolean };
+
+export type DialogueT = {
+  id: string;
+  startedAt: string;
+  topic?: string | null;
+  transcript: DialogueTurn[];
+  insight?: string | null;
+  distress: boolean;
+};
+
+export type MoodT = {
+  id: string;
+  date: string;
+  time: string;
+  label?: string | null;
+  moodIntensity?: number | null;
+  energy?: number | null;
+  context?: string | null;
+  createdAt: string;
+};
+
+export type HabitT = {
+  id: string;
+  name: string;
+  isActive: boolean;
+  sortOrder: number;
+};
+
+export type HabitLogT = {
+  id: string;
+  habitId: string;
+  date: string;
   done: boolean;
-}
+};
 
-export interface AbsenceInfo {
-  isAbsent: boolean;
-  days: number;
-  showWelcomeBack?: boolean;
-  allowGoalRedefine?: boolean;
-}
+export type ProfileTraitT = {
+  id: string;
+  trait: string;
+  evidence?: string | null;
+  confidence: number;
+  detectedAt: string;
+};
 
-export interface WeeklySummary {
-  routineCompletionAvg: number;
-  moodTrend: "up" | "stable" | "down";
-  taskDeferRate: number;
-  topStreaks: { habitName: string; days: number }[];
-  warnings: { type: string; description: string }[];
-}
-
-export interface GoalHierarchy {
-  milestones: { title: string; horizon: string; kpi?: string }[];
-  monthlyFocus: string[];
-  weeklyActions: string[];
-  tomorrowTasks: string[];
-}
-
-export type QuickCaptureType = "thought" | "task" | "idea" | "note";
+export type AppState = {
+  captures: CaptureT[];
+  links: LinkT[];
+  goals: LifeGoalT[];
+  projects: ProjectT[];
+  tasks: TaskT[];
+  ideas: IdeaT[];
+  dialogues: DialogueT[];
+  moods: MoodT[];
+  habits: HabitT[];
+  habitLogs: HabitLogT[];
+  traits: ProfileTraitT[];
+};
