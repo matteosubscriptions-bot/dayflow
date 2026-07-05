@@ -81,7 +81,25 @@ src/store/useAppStore.ts    stato client + coda offline
 src/components/AppShell.tsx la soglia tra le due superfici
 src/components/officina/*   Oggi · Progetti · Idee · Cerca
 src/components/specchio/*   Dialogo · Diario · Timeline · Obiettivi · Profilo
+src/app/status              pagina di stato + self-test end-to-end
 ```
+
+## Pagina di stato — `/status`
+
+Health check e collaudo in un posto solo:
+
+- **Server & dati**: app/API, connessione PostgreSQL (con latenza), stato
+  AI (chiave presente o fallback), conteggi dell'archivio.
+- **Questo browser**: disponibilità Web Speech API con **test microfono**
+  live (parli, vedi la trascrizione), localStorage per la coda offline,
+  stato rete.
+- **Self-test end-to-end** (bottone): esercita tutte le funzionalità via
+  API reali — cattura grezza + router, elaborazione→task e →idea con
+  connessioni proposte, idea→task nel grafo, rana del giorno, dialogo
+  Counselor, commutatore disagio, storico dialoghi, tratto nel profilo,
+  check-in umore/energia, gratitudine, ciclo abitudini, obiettivo di vita
+  + task che lo sostiene, ricerca, review, export — con dati marcati
+  `[TEST]` rimossi automaticamente alla fine.
 
 ## Produzione
 
