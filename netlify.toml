@@ -1,7 +1,9 @@
-# Netlify config per DayFlow (Next.js 14 App Router)
+# Netlify config per Officina & Specchio (Next.js 14 App Router)
 
 [build]
-  command = "npm run build"   # esegue `prisma generate` + `next build`
+  # Applica le migration Prisma al DB di produzione, poi builda
+  # (`npm run build` esegue anche `prisma generate`).
+  command = "npx prisma migrate deploy && npm run build"
   publish = ".next"
 
 [build.environment]
@@ -10,6 +12,8 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Le variabili d'ambiente (DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL,
-# ANTHROPIC_API_KEY) vanno impostate in Site settings → Environment variables,
-# non qui (non committare i secret).
+# Le variabili d'ambiente vanno impostate in Site configuration →
+# Environment variables (non qui: niente secret nel repo):
+#   DATABASE_URL      → Postgres gestito (Supabase/Neon/Railway)
+#   ANTHROPIC_API_KEY → opzionale: attiva gli agenti AI
+#   ANTHROPIC_MODEL   → opzionale (default claude-sonnet-4-6)
