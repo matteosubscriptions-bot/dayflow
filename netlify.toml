@@ -1,9 +1,7 @@
 # Netlify config per Officina & Specchio (Next.js 14 App Router)
 
 [build]
-  # Applica le migration Prisma al DB di produzione, poi builda
-  # (`npm run build` esegue anche `prisma generate`).
-  command = "npx prisma migrate deploy && npm run build"
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]
