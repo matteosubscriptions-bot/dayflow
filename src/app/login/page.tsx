@@ -1,81 +1,81 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { Logo } from "@/components/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"login" | "register">("login");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
     setLoading(true);
+    setError(null);
     const res = await signIn("credentials", {
       email,
       password,
-      register: mode === "register" ? "true" : "false",
       redirect: false,
     });
     setLoading(false);
     if (res?.error) {
-      setError("Email o password non corretti.");
-    } else {
-      router.push("/home");
-      router.refresh();
+      setError("Credenziali non valide.");
+      return;
     }
-  };
+    router.push("/home");
+    router.refresh();
+  }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center px-6">
-      <div className="flex w-full max-w-sm flex-col gap-8">
-        <div className="text-center">
-          <h1 className="font-display text-4xl">DayFlow</h1>
-          <p className="mt-2 text-ink/50">Uno spazio per guardarti crescere.</p>
-        </div>
+    <main className="mx-auto flex min-h-screen w-full max-w-content flex-col justify-center px-6 py-16">
+      <div className="mb-10 flex items-center gap-3">
+        <Logo className="h-8 w-8" />
+        <span className="label">{APP_NAME}</span>
+      </div>
 
-        <form onSubmit={submit} className="flex flex-col gap-4">
+      <h1 className="font-display italic text-5xl leading-tight">
+        {APP_TAGLINE}
+      </h1>
+      <p className="mt-4 max-w-md text-muted">
+        Il tuo spazio privato per catturare idee, note e progetti. Al primo
+        accesso con una nuova email l&apos;account viene creato automaticamente.
+      </p>
+
+      <form onSubmit={onSubmit} className="framed mt-10 flex flex-col gap-5">
+        <label className="flex flex-col gap-2">
+          <span className="label-muted">Email</span>
           <input
             type="email"
             required
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="rounded-card border border-ink/10 bg-mist p-3 outline-none focus:border-focus"
+            className="border border-ink/30 bg-paper px-4 py-3 outline-none focus:border-ink"
           />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="label-muted">Password</span>
           <input
             type="password"
             required
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            className="rounded-card border border-ink/10 bg-mist p-3 outline-none focus:border-focus"
+            className="border border-ink/30 bg-paper px-4 py-3 outline-none focus:border-ink"
           />
-          {error && <p className="text-sm text-attention">{error}</p>}
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "…" : mode === "login" ? "Entra" : "Crea account"}
-          </button>
-        </form>
+        </label>
 
-        <button
-          type="button"
-          className="btn-ghost text-sm"
-          onClick={() => setMode((m) => (m === "login" ? "register" : "login"))}
-        >
-          {mode === "login"
-            ? "Non hai un account? Registrati"
-            : "Hai già un account? Entra"}
+        {error ? <p className="text-sm text-red-700">{error}</p> : null}
+
+        <button type="submit" disabled={loading} className="pill-solid mt-2">
+          {loading ? "Un attimo…" : "Entra"}
         </button>
-
-        <p className="text-center text-xs text-ink/30">
-          Demo: demo@dayflow.app / dayflow
-        </p>
-      </div>
+      </form>
     </main>
   );
 }

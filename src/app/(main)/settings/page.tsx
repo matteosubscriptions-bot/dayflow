@@ -1,39 +1,21 @@
-"use client";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
+import { SettingsClient } from "@/components/SettingsClient";
 
-import Link from "next/link";
-import { signOut, useSession } from "next-auth/react";
+export const dynamic = "force-dynamic";
 
-export default function SettingsPage() {
-  const { data: session } = useSession();
+export default async function SettingsPage() {
+  const userId = (await getCurrentUserId())!;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, theme: true, textScale: true },
+  });
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in">
-      <h1 className="font-display text-3xl">Tu</h1>
-
-      <div className="rounded-card bg-mist p-4">
-        <p className="meta">Account</p>
-        <p className="mt-1">{session?.user?.email ?? "—"}</p>
-      </div>
-
-      <nav className="flex flex-col gap-2">
-        <Link href="/settings/habits" className="rounded-card bg-mist p-4 hover:bg-mist/70">
-          Gestione abitudini
-        </Link>
-        <Link href="/settings/checkin-times" className="rounded-card bg-mist p-4 hover:bg-mist/70">
-          Orari check-in
-        </Link>
-        <Link href="/reports" className="rounded-card bg-mist p-4 hover:bg-mist/70">
-          Storico report
-        </Link>
-      </nav>
-
-      <button
-        type="button"
-        className="rounded-card border border-attention/40 p-4 text-attention hover:bg-attention/10"
-        onClick={() => signOut({ callbackUrl: "/login" })}
-      >
-        Esci
-      </button>
-    </div>
+    <SettingsClient
+      email={user?.email ?? ""}
+      initialTheme={(user?.theme as "light" | "dark") ?? "light"}
+      initialScale={user?.textScale ?? 100}
+    />
   );
 }

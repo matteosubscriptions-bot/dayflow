@@ -1,33 +1,26 @@
-import {
-  startOfDay,
-  endOfDay,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-} from "date-fns";
+const MONTHS_IT = [
+  "GEN", "FEB", "MAR", "APR", "MAG", "GIU",
+  "LUG", "AGO", "SET", "OTT", "NOV", "DIC",
+];
 
-// All week math uses Monday as the first day (it-IT convention).
-export const WEEK_OPTS = { weekStartsOn: 1 as const };
-
-export function dayRange(date: Date) {
-  return { gte: startOfDay(date), lte: endOfDay(date) };
+/** "06 LUG" — short date used in the library list. */
+export function shortDate(d: Date | string): string {
+  const date = typeof d === "string" ? new Date(d) : d;
+  return `${String(date.getDate()).padStart(2, "0")} ${MONTHS_IT[date.getMonth()]}`;
 }
 
-export function weekRange(date: Date) {
-  return {
-    gte: startOfWeek(date, WEEK_OPTS),
-    lte: endOfWeek(date, WEEK_OPTS),
-  };
+/** "06 LUG 2026, 09:57" — full date used in the note header. */
+export function fullDate(d: Date | string): string {
+  const date = typeof d === "string" ? new Date(d) : d;
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${shortDate(date)} ${date.getFullYear()}, ${hh}:${mm}`;
 }
 
-export function monthRange(date: Date) {
-  return { gte: startOfMonth(date), lte: endOfMonth(date) };
-}
-
-/** Parses a YYYY-MM-DD or ISO string to a Date at local start-of-day. */
-export function parseDate(input?: string): Date {
-  if (!input) return startOfDay(new Date());
-  const d = new Date(input);
-  return isNaN(d.getTime()) ? startOfDay(new Date()) : d;
+/** "0:16" — mm:ss for audio durations. */
+export function formatDuration(seconds: number | null | undefined): string {
+  if (!seconds || seconds < 0) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
 }

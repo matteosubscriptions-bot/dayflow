@@ -2,21 +2,18 @@ import { NextResponse } from "next/server";
 import { getCurrentUserId } from "@/lib/auth";
 
 /**
- * Resolves the authenticated user id for an API route.
- * Throws a Response (401) when unauthenticated — callers should let it
- * propagate, or use {@link requireUserId} inside a try/catch.
- *
- * Security: the userId always comes from the session, never request input
- * (per spec §16 — RLS-style scoping by session userId).
+ * API route guard: resolves the session user id or a ready 401 response.
+ * Every data query must filter by this id (never trust ids from the client).
  */
-export async function requireUserId(): Promise<string> {
+export async function requireUserId(): Promise<
+  { userId: string; error: null } | { userId: null; error: NextResponse }
+> {
   const userId = await getCurrentUserId();
   if (!userId) {
-    throw NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return {
+      userId: null,
+      error: NextResponse.json({ error: "Non autenticato" }, { status: 401 }),
+    };
   }
-  return userId;
-}
-
-export function isResponse(value: unknown): value is Response {
-  return value instanceof Response;
+  return { userId, error: null };
 }

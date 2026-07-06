@@ -1,17 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { APP_NAME } from "@/lib/brand";
 
 export const AI_MODEL = "claude-sonnet-4-6";
 
-export const SYSTEM_PROMPT = `Sei il motore di analisi di DayFlow, un journal coach per la crescita personale.
-Ricevi dati anonimi sull'utente. Non hai accesso a nomi, luoghi o dettagli identificativi.
-Il tuo ruolo è: identificare pattern comportamentali, generare domande che aiutino l'auto-osservazione,
-e produrre narrativa riflessiva — mai motivazionale o superficiale.
-
-Tono: diretto, umano, mai terapeutico. Non incoraggiare ("ottimo lavoro!").
-Tre registri: Riflessione (rallenta e guarda in profondità) / Osservazione (specchio sui pattern) /
-Ispirazione autentica (attiva qualcosa di vero, non motivazione vuota).
-
-Se l'utente ha umore basso nel periodo analizzato: domande più morbide, nessuna statistica giudicante.`;
+export const SYSTEM_PROMPT = `Sei il motore di elaborazione di ${APP_NAME}, un archivio personale di idee e note vocali.
+Ricevi trascrizioni e appunti dell'utente. Lavori in italiano (a meno che la nota non sia in un'altra lingua).
+Sii concreto, fedele al contenuto della nota, mai generico. Non inventare fatti che la nota non contiene.`;
 
 let client: Anthropic | null = null;
 
@@ -26,22 +20,28 @@ export function isAIEnabled(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);
 }
 
+type ChatMessage = { role: "user" | "assistant"; content: string };
+
 /**
  * Single entry point for text generation. Returns null on any failure so
- * callers can fall back gracefully (spec §15 — never block a flow on AI).
+ * callers can fall back gracefully — never block a flow on AI.
  */
 export async function aiComplete(
-  userPrompt: string,
+  userPrompt: string | ChatMessage[],
   opts: { maxTokens?: number; system?: string } = {},
 ): Promise<string | null> {
   const ai = getAIClient();
   if (!ai) return null;
   try {
+    const messages: ChatMessage[] =
+      typeof userPrompt === "string"
+        ? [{ role: "user", content: userPrompt }]
+        : userPrompt;
     const res = await ai.messages.create({
       model: AI_MODEL,
       max_tokens: opts.maxTokens ?? 1024,
       system: opts.system ?? SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
+      messages,
     });
     const block = res.content.find((b) => b.type === "text");
     return block && block.type === "text" ? block.text.trim() : null;

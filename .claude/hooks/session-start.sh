@@ -1,5 +1,5 @@
 #!/bin/bash
-# DayFlow — SessionStart hook: prepares the repo so build/lint/db work in
+# Filo — SessionStart hook: prepares the repo so build/lint/db work in
 # Claude Code on the web. Idempotent and non-interactive.
 set -euo pipefail
 
@@ -20,12 +20,12 @@ if command -v pg_ctlcluster >/dev/null 2>&1; then
 
     # Ensure the dev role + database exist (CREATEDB needed for Prisma's
     # shadow database used by `migrate`).
-    sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='dayflow'" \
+    sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='filo'" \
       | grep -q 1 \
-      || sudo -u postgres psql -c "CREATE ROLE dayflow LOGIN PASSWORD 'dayflow' CREATEDB;" 2>/dev/null || true
-    sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='dayflow'" \
+      || sudo -u postgres psql -c "CREATE ROLE filo LOGIN PASSWORD 'filo' CREATEDB;" 2>/dev/null || true
+    sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='filo'" \
       | grep -q 1 \
-      || sudo -u postgres createdb -O dayflow dayflow 2>/dev/null || true
+      || sudo -u postgres createdb -O filo filo 2>/dev/null || true
   fi
 fi
 
@@ -36,4 +36,4 @@ npm install
 # Apply committed migrations to the dev database.
 npx prisma migrate deploy 2>/dev/null || npx prisma db push --skip-generate
 
-echo "DayFlow session ready."
+echo "Filo session ready."

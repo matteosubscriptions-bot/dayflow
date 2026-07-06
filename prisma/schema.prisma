@@ -1,9 +1,3 @@
-// DayFlow — Prisma schema
-//
-// PostgreSQL (spec target: Supabase/Railway/Neon). Dev sessions use a local
-// Postgres started by the SessionStart hook; production points DATABASE_URL at
-// a managed instance. Every "enum" field is a String, keeping the schema simple.
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,327 +8,120 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ── NextAuth adapter models ───────────────────────────────────
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-// ── Core domain ───────────────────────────────────────────────
-
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  passwordHash  String?
-  emailVerified DateTime?
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relations
-  accounts         Account[]
-  sessions         Session[]
-  visions          Vision[]
-  goals            Goal[]
-  weeklyActions    WeeklyAction[]
-  checkIns         CheckIn[]
-  journalEntries   JournalEntry[]
-  moods            Mood[]
-  routines         Routine[]
-  routineLogs      RoutineLog[]
-  tasks            Task[]
-  ideas            Idea[]
-  patterns         Pattern[]
-  reviews          Review[]
-  reports          Report[]
-  dailyPlans       DailyPlan[]
-  reflectionsShown ReflectionShown[]
-  habits           Habit[]
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String?
+  passwordHash String?
+  theme        String    @default("light") // light | dark
+  textScale    Int       @default(100) // percent
+  createdAt    DateTime  @default(now())
+  notes        Note[]
+  projects     Project[]
+  tags         Tag[]
 }
 
-model Vision {
-  id        String   @id @default(cuid())
-  userId    String
-  text      String
-  area      String?
-  horizon   String   @default("3y")
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  goals Goal[]
-}
-
-model Goal {
-  id          String    @id @default(cuid())
-  userId      String
-  visionId    String?
-  parentId    String? // gerarchia: 12m -> 3m -> 1m -> week
-  title       String
-  description String?
-  area        String?
-  horizon     String // '12m' | '3m' | '1m' | 'week'
-  kpi         String?
-  whyDeep     String? // perché profondo
-  targetDate  DateTime?
-  status      String    @default("active") // 'active'|'achieved'|'paused'|'dropped'
-  progress    Int       @default(0) // 0-100
-  alignment   Int? // 1-10
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vision        Vision?        @relation(fields: [visionId], references: [id])
-  parent        Goal?          @relation("GoalHierarchy", fields: [parentId], references: [id])
-  children      Goal[]         @relation("GoalHierarchy")
-  weeklyActions WeeklyAction[]
-  tasks         Task[]
-  ideas         Idea[]
-}
-
-model WeeklyAction {
-  id        String   @id @default(cuid())
-  userId    String
-  goalId    String?
-  weekStart DateTime
-  title     String
-  status    String   @default("planned") // 'planned'|'done'|'partial'|'skipped'
-  note      String?
-  createdAt DateTime @default(now())
-
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  goal Goal? @relation(fields: [goalId], references: [id])
-}
-
-model CheckIn {
-  id          String    @id @default(cuid())
-  userId      String
-  date        DateTime
-  type        String // 'morning'|'midday'|'evening'|'weekly'|'monthly'
-  startedAt   DateTime?
-  completedAt DateTime?
-  status      String    @default("pending") // 'pending'|'in_progress'|'completed'|'minimal'|'quick'
-  createdAt   DateTime  @default(now())
-
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  journalEntries JournalEntry[]
-  review         Review?
-}
-
-model JournalEntry {
-  id           String   @id @default(cuid())
-  userId       String
-  checkInId    String?
-  date         DateTime
-  type         String // 'morning'|'midday'|'evening'|'weekly'|'monthly'|'free'|'milestone_achieved'
-  questionKey  String?
-  questionText String?
-  isDynamic    Boolean  @default(false)
-  voiceRaw     String? // testo trascritto
-  aiSummary    String?
-  createdAt    DateTime @default(now())
-
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  checkIn CheckIn? @relation(fields: [checkInId], references: [id])
-}
-
-model Mood {
-  id        String   @id @default(cuid())
-  userId    String
-  date      DateTime
-  time      String
-  emoji     String?
-  label     String?
-  intensity Int? // 1-5
-  energy    Int? // 1-10 (separato dal mood)
-  voiceNote String?
-  context   String?
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Habit {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  category  String?
-  isActive  Boolean  @default(true)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  routineLogs RoutineLog[]
-}
-
-model Routine {
+model Project {
   id          String   @id @default(cuid())
   userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String
-  category    String?
-  targetSlot  String? // 'morning'|'midday'|'evening'
-  durationMin Int?
-  frequency   String   @default("daily")
-  customDays  String? // JSON array di giorni
-  isActive    Boolean  @default(true)
-  sortOrder   Int      @default(0)
+  description String?
   createdAt   DateTime @default(now())
+  notes       Note[]
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  routineLogs RoutineLog[]
+  @@index([userId])
 }
 
-model RoutineLog {
-  id          String   @id @default(cuid())
-  userId      String
-  routineId   String?
-  habitId     String?
-  date        DateTime
-  done        Boolean  @default(false)
-  durationMin Int?
-  note        String?
-  loggedAt    DateTime @default(now())
-
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  routine Routine? @relation(fields: [routineId], references: [id])
-  habit   Habit?   @relation(fields: [habitId], references: [id])
+enum NoteStatus {
+  DRAFT
+  READY
 }
 
-model Task {
-  id            String    @id @default(cuid())
+enum NoteSource {
+  TEXT
+  RECORDING
+  UPLOAD
+}
+
+model Note {
+  id            String        @id @default(cuid())
   userId        String
-  title         String
-  description   String?
-  goalId        String?
-  project       String?
-  priority      String    @default("medium") // 'high'|'medium'|'low'
-  dueDate       DateTime?
-  scheduledDate DateTime?
-  status        String    @default("todo") // 'todo'|'done'|'deferred'|'archived'
-  completedAt   DateTime?
-  deferCount    Int       @default(0)
-  source        String    @default("manual")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId     String?
+  project       Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  title         String        @default("Senza titolo")
+  contentHtml   String        @default("")
+  transcript    String        @default("")
+  status        NoteStatus    @default(DRAFT)
+  source        NoteSource    @default(TEXT)
+  audioData     Bytes?
+  audioMime     String?
+  audioDuration Int? // seconds
+  summary       String?
+  keyPoints     Json? // string[]
+  todos         Json? // { text: string, done: boolean }[]
+  tfVector      Json? // { [term]: count } for semantic search / graph
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  tags          NoteTag[]
+  generations   Generation[]
+  agentThreads  AgentThread[]
 
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  goal Goal? @relation(fields: [goalId], references: [id])
+  @@index([userId, createdAt])
+  @@index([projectId])
 }
 
-model Idea {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  body      String?
-  goalId    String?
-  project   String?
-  tags      String? // JSON array
-  voiceRaw  String?
-  status    String   @default("raw") // 'raw'|'refined'|'task'|'archived'
-  createdAt DateTime @default(now())
+model Tag {
+  id     String    @id @default(cuid())
+  userId String
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name   String // uppercase, no leading #
+  notes  NoteTag[]
 
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  goal Goal? @relation(fields: [goalId], references: [id])
+  @@unique([userId, name])
 }
 
-model Pattern {
-  id             String    @id @default(cuid())
-  userId         String
-  detectedAt     DateTime  @default(now())
-  periodStart    DateTime?
-  periodEnd      DateTime?
-  patternType    String // 'routine_skip'|'mood_drop'|'task_defer'|'goal_gap'|'streak_positive'
-  description    String
-  dataJson       String? // JSON con dati aggiuntivi
-  usedInQuestion Boolean   @default(false)
-  createdAt      DateTime  @default(now())
+model NoteTag {
+  noteId String
+  note   Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tagId  String
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([noteId, tagId])
 }
 
-model Review {
-  id          String   @id @default(cuid())
-  userId      String
-  type        String // 'weekly'|'monthly'
-  periodStart DateTime
-  periodEnd   DateTime
-  checkInId   String?  @unique
-  highlights  String?
-  focusNext   String?
-  aiNarrative String?
-  createdAt   DateTime @default(now())
-
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  checkIn CheckIn? @relation(fields: [checkInId], references: [id])
+enum GenerationKind {
+  SOCIAL
+  EMAIL
+  ARTICLE
+  SPEECH
 }
 
-model Report {
-  id          String   @id @default(cuid())
-  userId      String
-  type        String // 'daily'|'weekly'|'monthly'
-  periodStart DateTime
-  periodEnd   DateTime
-  contentJson String? // JSON strutturato
-  narrative   String? // narrativa AI
-  createdAt   DateTime @default(now())
+model Generation {
+  id        String         @id @default(cuid())
+  noteId    String
+  note      Note           @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  kind      GenerationKind
+  content   String
+  createdAt DateTime       @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([noteId, kind])
 }
 
-model DailyPlan {
-  id          String   @id @default(cuid())
-  userId      String
-  date        DateTime @unique
-  top3TaskIds String? // JSON array di task IDs
-  intention   String?
-  focusWord   String?
-  notes       String?
-  createdAt   DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum AgentKind {
+  PAMELA
+  SIMONE
+  CORINNE
 }
 
-model ReflectionShown {
-  id          String   @id @default(cuid())
-  userId      String
-  date        DateTime
-  context     String?
-  messageType String // 'library'|'ai_generated'
-  messageText String
-  category    String?
-  createdAt   DateTime @default(now())
+model AgentThread {
+  id        String    @id @default(cuid())
+  noteId    String
+  note      Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  agent     AgentKind
+  messages  Json      @default("[]") // { role: "user"|"assistant", content: string, at: string }[]
+  updatedAt DateTime  @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([noteId, agent])
 }

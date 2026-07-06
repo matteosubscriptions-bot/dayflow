@@ -1,4 +1,3 @@
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -6,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/password";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
@@ -18,8 +16,6 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        // When true, create the account if it doesn't exist yet.
-        register: { label: "Register", type: "text" },
       },
       async authorize(credentials) {
         const email = credentials?.email?.trim().toLowerCase();
@@ -29,7 +25,7 @@ export const authOptions: NextAuthOptions = {
         let user = await prisma.user.findUnique({ where: { email } });
 
         if (!user) {
-          // Sign-up on first credential use (email/password flow).
+          // Sign-up on first credential use (personal, single-user app).
           user = await prisma.user.create({
             data: { email, passwordHash: hashPassword(password) },
           });
