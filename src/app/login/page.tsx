@@ -24,7 +24,13 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (res?.error) {
-      setError("Credenziali non valide.");
+      // L'account demo esiste con password "filo": un errore molto comune è
+      // confondersi con il dominio dell'email (demo@filo.app).
+      setError(
+        email.trim().toLowerCase() === "demo@filo.app"
+          ? 'Password errata per l\'account demo: è "filo", non "app" (il dominio dell\'email è .app, non la password).'
+          : "Credenziali non valide. Se l'email esiste già, ricontrolla la password (maiuscole/minuscole contano).",
+      );
       return;
     }
     router.push("/home");
@@ -76,6 +82,10 @@ export default function LoginPage() {
           {loading ? "Un attimo…" : "Entra"}
         </button>
       </form>
+
+      <a href="/status" className="label-muted mt-6 hover:text-ink">
+        Problemi di accesso? Controlla lo stato del sistema →
+      </a>
     </main>
   );
 }
