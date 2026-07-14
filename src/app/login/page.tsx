@@ -13,6 +13,23 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  async function demoLogin() {
+    setLoading(true);
+    setError(null);
+    const res = await signIn("credentials", {
+      email: "demo@filo.app",
+      password: "filo",
+      redirect: false,
+    });
+    setLoading(false);
+    if (res?.error) {
+      setError("Errore nel login demo. Riprova.");
+      return;
+    }
+    router.push("/home");
+    router.refresh();
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -82,6 +99,14 @@ export default function LoginPage() {
           {loading ? "Un attimo…" : "Entra"}
         </button>
       </form>
+
+      <button
+        onClick={demoLogin}
+        disabled={loading}
+        className="pill-outline mt-4"
+      >
+        {loading ? "Un attimo…" : "Demo (entra veloce)"}
+      </button>
 
       <a href="/status" className="label-muted mt-6 hover:text-ink">
         Problemi di accesso? Controlla lo stato del sistema →
